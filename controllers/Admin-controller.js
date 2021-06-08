@@ -16,7 +16,7 @@ const create = async (req, res) => {
                 if (err) {
                     return res.status(500).json({
                     error: {
-                    msg: 'Server Error',
+                    msg: 'Server Error' + err,
                     statusCode: 500
                 }
             })

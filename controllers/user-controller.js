@@ -11,9 +11,9 @@ const examiner = require('../models/examiner');
 const auth = async (req, res, next) => {
     const { username, password } = req.body;
      const admin = await Admin.findAll({ where: { staffId: username } }); 
-    const lecturer = await Lecturer.findAll({include: [{model: Course, as: 'course' }], where: { lecturerId: username } });
-    const student = await Student.findAll({ where: { studentId: username } });
-    const examiner = await Examiner.findAll({ where: { examinerId: username } });
+    const lecturer = await Lecturer.findAll({include: [{model: Course, as: 'course' }], where: { lecturerId: username, password: password } });
+    const student = await Student.findAll({ where: { studentId: username, password: password } });
+    const examiner = await Examiner.findAll({ where: { examinerId: username, password: password } });
 
     try {
           
@@ -26,14 +26,7 @@ const auth = async (req, res, next) => {
         
 
         if (examiner.length > 0) {
-            bc.compare(password, examiner[0].password, async (err, result) => {
-                if (err) {
-                    return await res.status(401).json({
-                        msg: 'Invalid username or password',
-                        statusCode: 401
-                    })
-                }
-                if (result) {
+                
                     const token = jwt.sign({
                         examinerId: examiner[0].examinerId,
                         password: examiner[0].password
@@ -48,16 +41,10 @@ const auth = async (req, res, next) => {
                         token: token,
                         expiresIn: 3600
                     })
-                }
-                return await res.status(401).json({
-                    msg: 'Invalid username or password',
-                    statusCode: 401,
-                })
-
-            })
-        }
+            }
+                
         
-        if (admin.length > 0) {
+        else if (admin.length > 0) {
             bc.compare(password, admin[0].password, async (err, result) => {
                 if (err) {
                     return await res.status(401).json({
@@ -74,34 +61,16 @@ const auth = async (req, res, next) => {
                             expiresIn: 3600
                         }
                     );
-                     await res.status(200).json({
+                    await res.status(200).json({
                         msg: 'success',
                         user: admin,
                         token: token,
                         expiresIn: 3600
                     })
-                    return res.end()
                 }
-                else {
-                     await res.status(401).json({
-                        msg: 'Invalid username or password',
-                        statusCode: 401,
-                    })
-                    return res.end()
-                }
-
             })
         }
-
-        if (student.length > 0) {
-            bc.compare(password, student[0].password, async (err, result) => {
-                if (err) {
-                    return await res.status(401).json({
-                        msg: 'Invalid username or password',
-                        statusCode: 401
-                    })
-                }
-                if (result) {
+       else if (student.length > 0) {
                     const token = jwt.sign({
                         studentId: student[0].studentId,
                         password: student[0].password
@@ -116,26 +85,9 @@ const auth = async (req, res, next) => {
                         token: token,
                         expiresIn: 3600
                     })
-                }
-                return await res.status(401).json({
-                    msg: 'Invalid username or password',
-                    statusCode: 401,
-                })
-
-            })
         }
          
-        
-            
-        if (lecturer.length > 0) {
-            bc.compare(password, lecturer[0].password, async (err, result) => {
-                if (err) {
-                    return await res.status(401).json({
-                        msg: 'Invalid username or password',
-                        statusCode: 401
-                    })
-                }
-                if (result) {
+       else if (lecturer.length > 0) {
                     const token = jwt.sign({
                         lecturerId: lecturer[0].lecturerId,
                         password: lecturer[0].password
@@ -150,15 +102,13 @@ const auth = async (req, res, next) => {
                         token: token,
                         expiresIn: 3600
                     })
-                }
-                return await res.status(401).json({
-                    msg: 'Invalid username or password',
-                    statusCode: 401,
-                })
-
-            })
         }
-         
+        else {
+            return await res.status(401).json({
+                    msg: 'Invalid username or password',
+                    statusCode: 401
+                })
+        }
         
         }
         catch (error) {
